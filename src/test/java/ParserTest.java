@@ -77,4 +77,54 @@ public class ParserTest {
 
     }
 
+    @Test
+    void testValidJSON_NullIntBoolean() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step3/valid.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(1, actual);
+    }
+
+    @Test
+    void testInValidJSON_InvalidStartToNonStringKeyPairValue() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step3/invalid.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(8, actual);
+    }
+
+    @Test
+    void testInValidJSON_InvalidExpectedFalseValue() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step3/invalid2.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(10, actual);
+    }
+
+    @Test
+    void testInValidJSON_InvalidExpectedTrueValue() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step3/invalid3.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(9, actual);
+    }
+
+    @Test
+    void testInValidJSON_InvalidExpectedNullValue() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step3/invalid5.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(11, actual);
+    }
+
+
+
+    @Test
+    void testInValidJSON_InvalidExpectedString_extraLetterOnEnd() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step3/invalid4.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(13, actual);
+    }
+
 }
