@@ -1,0 +1,8 @@
+{
+  "key": "'val'ue",
+  "key-n": 101,
+  "key-o": {
+    "inne'r key": "in'ner value"
+  },
+  "key-l": ["list value''"]
+}

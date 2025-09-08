@@ -8,7 +8,6 @@ O(n) efficiency as we loop through once, checking each char once.
 https://codingchallenges.fyi/challenges/challenge-json-parser/
 
 
-
 Behaviour:
 
 - Basic key-value string pairs:
@@ -29,3 +28,9 @@ Behaviour:
   - They only appear after the : the key value pair.
   - We check them with the side value processing of the key value pair.
   - Set length that can be jumped forward in loop control.
+
+- Arrays
+  - Arrays can behave differently to objects and so need their own handling.
+
+Note: 
+Currently no support for decimal points in numbers eg. 0.55

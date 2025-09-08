@@ -127,4 +127,61 @@ public class ParserTest {
         assertEquals(13, actual);
     }
 
+
+    @Test
+    void testValidJSON_validNumberEmptyObjectAndArray() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step4/valid.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(1, actual);
+    }
+
+    @Test
+    void testValidJSON_validNumberPopulatedObjectAndArray() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step4/valid2.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(1, actual);
+    }
+
+    @Test
+    void testInValidJSON_validNumberPopulatedObjectAndInvalidArray() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step4/invalid.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(17, actual);
+    }
+
+    @Test
+    void testValidJSON_validNumberPopulatedObjectAndArrayWithSingleQuoteNames() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step4/valid3.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(1, actual);
+    }
+
+    @Test
+    void testValidJSON_FinalStage1() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step5/valid1.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(1, actual);
+    }
+
+    @Test
+    void testValidJSON_FinalStage2() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step5/valid2.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(1, actual);
+    }
+
+    @Test
+    void testInValidJSON_FinalStage1() throws IOException {
+        String json =Files.readString(Paths.get("src/test/resources/step5/invalid1.json"));
+
+        Integer actual = methods.isValidJson(json);
+        assertEquals(5, actual);
+    }
+
 }

@@ -6,6 +6,9 @@ class StateTracker {
     boolean previousWasColon;
     boolean previousWasNumber;
     boolean hasBeenReset;
+    boolean previousWasOpenObjectBracket;
+    boolean previousWasOpenArrayBracket;
+    boolean previousWasSpeechMarks;
     int position;
     char currentChar;
     String json;
@@ -23,8 +26,11 @@ public class Methods {
         stateTracker.previousWasNumber = false;
         stateTracker.position = 0;
         stateTracker.hasBeenReset = false;
+        stateTracker.previousWasOpenObjectBracket = false;
+        stateTracker.previousWasOpenArrayBracket = false;
+        stateTracker.previousWasSpeechMarks = false;
 
-        stateTracker.json = json.replaceAll("\\s+", "");
+        stateTracker.json = json.replaceAll("\\s", "");
 
         if (stateTracker.json.isEmpty()) {
             return 0;
@@ -33,7 +39,6 @@ public class Methods {
         if (!validStartAndFinishOfJson(stateTracker.json)) {
             return 2;
         }
-        ;
 
         //these are all value to allow for checking.
 
@@ -82,19 +87,102 @@ public class Methods {
                 }
             }
 
+
+            boolean isValidValue = true;
+
+            //need switch specifically for arrays as they are not in pairs sometimes
+            //just a list of numbers or strings etc.
+            if (stateTracker.previousWasOpenArrayBracket
+            && stateTracker.quoteNumber != 1) {
+                switch (stateTracker.currentChar) {
+                    case 't':
+                        isValidValue = validTrueBooleanValue(stateTracker.json, stateTracker.position);
+
+                        if (!isValidValue) {
+                            return 9;
+                        }
+                        //set stateTracker.currentChar to the char after 'true' and reset position state;
+                        resetTrackingValues(stateTracker, 4);
+                        break;
+                    case 'f':
+                        isValidValue = validFalseBooleanValue(stateTracker.json, stateTracker.position);
+                        if (!isValidValue) {
+                            return 10;
+                        }
+                        //set stateTracker.currentChar to the char after 'false' and reset position state;
+                        //note these can be refactored into a reset method
+                        resetTrackingValues(stateTracker, 5);
+                        break;
+
+                    case 'n':
+                        isValidValue = validNullValue(stateTracker.json, stateTracker.position);
+                        if (!isValidValue) {
+                            return 11;
+                        }
+                        //set stateTracker.currentChar to the char after 'null' and reset position state;
+                        resetTrackingValues(stateTracker, 4);
+                        break;
+
+                    case '{':
+                        //set reset the check state as we are entering a new nested object
+                        resetTrackingValues(stateTracker, 0);
+                        stateTracker.previousWasOpenObjectBracket = true;
+                        break;
+
+                    case '}':
+                        //set reset the check state as we are entering a new nested object
+                        //???????? this is incorrect
+                        if (stateTracker.previousWasOpenObjectBracket) {
+                            return 15;
+                        }
+                        break;
+
+                    case '[':
+                        //set reset the check state as we are entering a new nested object
+                        resetTrackingValues(stateTracker, 0);
+                        stateTracker.previousWasOpenArrayBracket = true;
+                        break;
+
+                    case ']':
+                        //set reset the check state as we are entering a new nested object
+                        break;
+                    case '"':
+                        resetTrackingValues(stateTracker,0);
+                        //set reset the check state as we are entering a new nested object
+                        stateTracker.previousWasSpeechMarks = true;
+                        break;
+
+                    default:
+                        return 17;                    }
+            }
+
             //Handles the expected ':' in the middle.
             //This will have to handle the boolean and integers.
             if (stateTracker.quoteNumber == 2) {
 
                 //this looks to check that the middle ':' is set.
-                if (stateTracker.currentChar != ':' && !stateTracker.previousWasColon && !stateTracker.previousWasNumber) {
+                if (stateTracker.currentChar != ':'
+                        && !stateTracker.previousWasColon
+                        && !stateTracker.previousWasNumber
+                        && !stateTracker.previousWasSpeechMarks
+                ) {
                     return 4;
                 }
 
-                //this looks to make sure the value after the middle ':' starts correctl
+                //catch the end of a uniue string value eg. 'nulll' or 'truee'
+                if (stateTracker.hasBeenReset) {
+                    if (!checkIfValidValueAfterResetTrackingValues(stateTracker.currentChar) &&
+                            !stateTracker.previousWasOpenArrayBracket &&
+                            !stateTracker.previousWasOpenObjectBracket) {
+                        return 13;
+                    }
+                }
+
+
+
+                    //this looks to make sure the value after the middle ':' starts correctl
 
                 if (stateTracker.previousWasColon) {
-                    boolean isValidValue = true;
 
                     //got to have to check numbers 1-9 - has to be run on each iteration along an INT
                     //One for true, false and null;
@@ -128,6 +216,35 @@ public class Methods {
                             //set stateTracker.currentChar to the char after 'null' and reset position state;
                             resetTrackingValues(stateTracker, 4);
                             break;
+
+                        case '{':
+                            //set reset the check state as we are entering a new nested object
+                            resetTrackingValues(stateTracker, 0);
+                            stateTracker.previousWasOpenObjectBracket = true;
+                            break;
+
+                        case '}':
+                            //set reset the check state as we are entering a new nested object
+
+                            //???????? this is incorrect
+                            if (stateTracker.previousWasOpenObjectBracket) {
+                                return 15;
+                            }
+                            break;
+
+                        case '[':
+                            //set reset the check state as we are entering a new nested object
+                            resetTrackingValues(stateTracker, 0);
+                            stateTracker.previousWasOpenArrayBracket = true;
+                            break;
+
+                        case ']':
+                            //set reset the check state as we are entering a new nested object
+                            if (stateTracker.previousWasOpenArrayBracket) {
+                                return 16;
+                            }
+                            break;
+
                         default:
                             //dont think i need anything here
                     }
@@ -149,12 +266,20 @@ public class Methods {
                     //loop through following numbers --here
 
                 }
+
+
                 //We expect " for everything that isnt an edgecase valid object
                 //need to add number handling - this is getting triggered on a number
                 if (stateTracker.previousWasColon && stateTracker.currentChar != '"' && !checkIfValidNumber(stateTracker.currentChar)) {
                     return 8;
                 }
             }
+
+            if(stateTracker.currentChar == '"') {
+                stateTracker.previousWasSpeechMarks = true;
+            }
+
+
 
             //this is to handle number values outside of the inital post ':' check.
             if (stateTracker.previousWasNumber) {
@@ -188,19 +313,24 @@ public class Methods {
 
             //catch the end of a uniue string value eg. 'nulll' or 'truee'
             if (stateTracker.hasBeenReset) {
-                if(!checkIfValidValueAfterResetTrackingValues(stateTracker.currentChar )){
+                if (!checkIfValidValueAfterResetTrackingValues(stateTracker.currentChar) &&
+                        !stateTracker.previousWasOpenArrayBracket &&
+                        !stateTracker.previousWasOpenObjectBracket) {
                     return 13;
                 }
             }
 
+//-----------------------------
         }
 
         //may note be needed - caught by 7
-        if (stateTracker.quoteNumber != 0) {
+        if (stateTracker.quoteNumber != 0
+        && !stateTracker.previousWasOpenObjectBracket
+        && !stateTracker.previousWasOpenArrayBracket
+        && !stateTracker.previousWasSpeechMarks) {
             //incomplete number of ""
             return 6;
         }
-
 
 
         return 1;
@@ -278,6 +408,9 @@ public class Methods {
     private void resetTrackingValues(StateTracker stateTracker, int positionForwardNumber) {
         stateTracker.previousWasColon = false;
         stateTracker.quoteNumber = 0;
+        stateTracker.previousWasOpenArrayBracket = false;
+        stateTracker.previousWasOpenObjectBracket = false;
+        stateTracker.previousWasSpeechMarks = false;
         stateTracker.previousWasComma = false;
         stateTracker.position = stateTracker.position + positionForwardNumber;
         stateTracker.currentChar = stateTracker.json.charAt(stateTracker.position);
